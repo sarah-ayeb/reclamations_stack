@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: ./api
+    container_name: reclamations_api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  dashboard:
+    build:
+      context: ./dashboard
+    container_name: reclamations_dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      # A l'interieur du reseau Docker cree par compose, "api" resout automatiquement
+      # vers le conteneur du service ci-dessus (pas besoin de localhost/IP).
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
